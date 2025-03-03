@@ -1,0 +1,23 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read and write their own scan history
+    match /scanHistory/{document} {
+      // Allow reading if the user is authenticated and either:
+      // 1. The document belongs to them (userId matches), OR
+      // 2. They're trying to list documents (for queries)
+      allow read: if request.auth != null && (
+        resource.data.userId == request.auth.uid || 
+        request.path.size() == 0
+      );
+      
+      // Allow creating new scan history if the user is authenticated and the document
+      // they're creating has their userId
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // Allow updating existing scan history if it belongs to them
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+  }
+} 
